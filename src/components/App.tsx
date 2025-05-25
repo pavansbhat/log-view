@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 const App: React.FC = () => {
   const [count, setCount] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchAllLogsData = async () => {
+      const response = await fetch('/api/v1/logs');
+      const data = await response.json();
+      return data;
+    };
+    fetchAllLogsData().then((data) => console.log(data));
+  }, []);
 
   return (
     <div>
