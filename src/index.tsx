@@ -1,18 +1,14 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client'; // Use 'react-dom/client' for React 18+
+import ReactDOM from 'react-dom/client';
 
-import App from '@/components/App'; // Using path alias from tsconfig and webpack
-import '@/styles/global.css'; // Import global styles
-
-// Import MSW worker
+import App from '@/components/App';
+import '@/styles/global.css';
 import { worker } from '@/mocks/browser';
 
 async function startApp() {
-  // Initialize MSW in development mode
   if (process.env.NODE_ENV === 'development') {
-    // Start the MSW worker
     await worker.start({
-      onUnhandledRequest: 'bypass', // Silently bypass any unhandled requests
+      onUnhandledRequest: 'bypass',
     });
     console.log('MSW initialized');
   }
@@ -31,5 +27,4 @@ async function startApp() {
   }
 }
 
-// Start the application
 startApp();
