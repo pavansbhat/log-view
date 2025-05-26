@@ -95,7 +95,7 @@ const App: React.FC = () => {
         />
       </StyledSidebarContainer>
       <StyledMainContent>
-        <TextArea onChange={handleSearchChange} />
+        <TextArea onChange={handleSearchChange} placeholder={'Search logs'} />
         <LogTable
           logData={allLogs}
           searchQuery={searchQuery}
