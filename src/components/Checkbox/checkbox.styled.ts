@@ -1,4 +1,3 @@
-//Checkbox Drop down
 import styled from 'styled-components';
 
 export const CheckboxContainer = styled.div`
@@ -13,5 +12,6 @@ export const StyledCheckbox = styled.input`
 
 export const CheckboxLabel = styled.label`
   font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
 `;

@@ -8,7 +8,6 @@ import {
   DateTh,
   MessageContentTd,
   MessageTh,
-  PlusSign,
   RowMarkerTd,
   ScrollableTableWrapper,
   SeverityTd,
@@ -24,35 +23,20 @@ import {
   CustomizeDropdown,
   DropdownTitle,
 } from '@/components/table/table.styled';
-
 import type { LogEntry } from '@/types';
-
-export const fetchSimulatedLogEntries = async (
-  page: number,
-  pageSize: number = 100,
-  allLogs: LogEntry[] = [],
-): Promise<{ entries: LogEntry[]; hasMore: boolean }> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const start = (page - 1) * pageSize;
-      const end = start + pageSize;
-      const paginatedLogs = allLogs.slice(start, end);
-
-      const hasMoreLogs = end < allLogs.length;
-
-      resolve({
-        entries: paginatedLogs,
-        hasMore: hasMoreLogs,
-      });
-    }, 500);
-  });
-};
+import { fetchSimulatedLogEntries } from '@/utils/utils';
 
 interface LogTableProps {
   logData: LogEntry[];
+  searchQuery?: string;
+  selectedSeverities?: string[];
 }
 
-export const LogTable: React.FC<LogTableProps> = ({ logData }) => {
+export const LogTable: React.FC<LogTableProps> = ({
+  logData,
+  searchQuery,
+  selectedSeverities = ['DEBUG', 'INFO', 'WARN', 'ERROR'],
+}) => {
   const [displayedLogs, setDisplayedLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -70,6 +54,25 @@ export const LogTable: React.FC<LogTableProps> = ({ logData }) => {
   const [messageVisible, setMessageVisible] = useState(() => {
     const saved = localStorage.getItem('logTable_messageVisible');
     return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const filteredLogs = displayedLogs.filter((log) => {
+    const matchesSeverity = selectedSeverities.includes(log.severity);
+    if (!matchesSeverity) {
+      return false;
+    }
+    if (!searchQuery) {
+      return true;
+    }
+    if (!log.body) {
+      return false;
+    }
+    try {
+      const bodyString = typeof log.body === 'string' ? log.body : JSON.stringify(log.body);
+      return bodyString.toLowerCase().includes(searchQuery.toLowerCase());
+    } catch {
+      return String(log.body).toLowerCase().includes(searchQuery.toLowerCase());
+    }
   });
 
   const loadLogs = useCallback(async () => {
@@ -165,7 +168,7 @@ export const LogTable: React.FC<LogTableProps> = ({ logData }) => {
   return (
     <TableContainer>
       <TableHeaderSection>
-        <Title>Live Tail</Title>
+        <Title>Log view</Title>
         <div style={{ position: 'relative' }} data-customize-container="">
           <CustomizeButton onClick={() => setIsCustomizeOpen(!isCustomizeOpen)}>
             <span role="img" aria-label="customize icon">
@@ -181,16 +184,19 @@ export const LogTable: React.FC<LogTableProps> = ({ logData }) => {
                 isChecked={dateVisible}
                 onChange={toggleDateVisible}
                 checkboxId={'date-column'}
+                label={'Date'}
               />
               <Checkbox
                 isChecked={severityVisible}
                 onChange={toggleSeverityVisible}
                 checkboxId={'severity-column'}
+                label={'Severity'}
               />
               <Checkbox
                 isChecked={messageVisible}
                 onChange={toggleMessageVisible}
                 checkboxId={'message-column'}
+                label={'Message'}
               />
             </CustomizeDropdown>
           )}
@@ -198,63 +204,72 @@ export const LogTable: React.FC<LogTableProps> = ({ logData }) => {
       </TableHeaderSection>
 
       <ScrollableTableWrapper>
-        <StyledTable>
-          <StyledThead>
-            <StyledTr>
-              <StyledTh style={{ width: '10px' }}></StyledTh>
-              {dateVisible && <DateTh>Date ▼</DateTh>}
-              {severityVisible && <SeverityTh>Severity</SeverityTh>}
-              {messageVisible && <MessageTh>Message</MessageTh>}
-            </StyledTr>
-          </StyledThead>
-          <tbody>
-            {displayedLogs.map((log, index) => (
-              <StyledTr key={log.id ?? `log-${index}`}>
-                <RowMarkerTd />
-                {dateVisible && (
-                  <DateTd>{format(parseInt(log.timestamp), 'dd MMM HH:mm:ss')}</DateTd>
-                )}
-                {severityVisible && <SeverityTd>{log.severity}</SeverityTd>}
-                {messageVisible && (
-                  <MessageContentTd>
-                    <PlusSign>+</PlusSign>
-                    {log.body}
-                  </MessageContentTd>
-                )}
+        {!dateVisible && !severityVisible && !messageVisible ? (
+          <LoadingIndicator>No logs to display</LoadingIndicator>
+        ) : (
+          <StyledTable>
+            <StyledThead>
+              <StyledTr>
+                <StyledTh style={{ width: '10px' }}></StyledTh>
+                {dateVisible && <DateTh>Date ▼</DateTh>}
+                {severityVisible && <SeverityTh>Severity</SeverityTh>}
+                {messageVisible && <MessageTh>Message</MessageTh>}
               </StyledTr>
-            ))}
+            </StyledThead>
+            <tbody>
+              {filteredLogs.map((log, index) => (
+                <StyledTr key={log.id ?? `log-${index}`}>
+                  <RowMarkerTd />
+                  {dateVisible && (
+                    <DateTd>{format(parseInt(log.timestamp), 'dd MMM HH:mm:ss')}</DateTd>
+                  )}
+                  {severityVisible && <SeverityTd>{log.severity}</SeverityTd>}
+                  {messageVisible && <MessageContentTd>{log.body}</MessageContentTd>}
+                </StyledTr>
+              ))}
 
-            {hasMore && (
-              <tr>
-                <td
-                  colSpan={
-                    1 + (dateVisible ? 1 : 0) + (severityVisible ? 1 : 0) + (messageVisible ? 1 : 0)
-                  }
-                  style={{ padding: '10px 0', backgroundColor: '#f5f5f5' }}
-                >
-                  <div
-                    ref={observerRef}
-                    style={{
-                      height: '40px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12px',
-                      color: '#999',
-                    }}
+              {hasMore && selectedSeverities.length > 0 && filteredLogs.length > 0 && (
+                <tr>
+                  <td
+                    colSpan={
+                      1 +
+                      (dateVisible ? 1 : 0) +
+                      (severityVisible ? 1 : 0) +
+                      (messageVisible ? 1 : 0)
+                    }
+                    style={{ padding: '10px 0', backgroundColor: '#f5f5f5' }}
                   >
-                    Loading more...
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </StyledTable>
+                    <div
+                      ref={observerRef}
+                      style={{
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px',
+                        color: '#999',
+                      }}
+                    >
+                      Loading more...
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </StyledTable>
+        )}
+        {loading &&
+          selectedSeverities.length > 0 &&
+          filteredLogs.length > 0 &&
+          !searchQuery &&
+          searchQuery?.length === 0 && <LoadingIndicator>Loading more logs...</LoadingIndicator>}
 
-        {loading && <LoadingIndicator>Loading more logs...</LoadingIndicator>}
-
-        {!loading && !hasMore && displayedLogs.length > 0 && (
+        {!loading && !hasMore && filteredLogs.length > 0 && (
           <LoadingIndicator>End of logs.</LoadingIndicator>
+        )}
+
+        {!loading && selectedSeverities.length === 0 && (
+          <LoadingIndicator>No logs to display</LoadingIndicator>
         )}
       </ScrollableTableWrapper>
     </TableContainer>

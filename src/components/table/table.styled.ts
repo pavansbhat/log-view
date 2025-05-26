@@ -9,7 +9,7 @@ export const TableContainer = styled.div`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   color: #333;
   font-size: 13px;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 100px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -53,6 +53,7 @@ export const CustomizeButton = styled.button`
 
 export const ScrollableTableWrapper = styled.div`
   overflow-y: auto;
+  width: 100%;
   flex: 1;
   will-change: transform;
   transform: translateZ(0);
@@ -153,13 +154,6 @@ export const MessageContentTd = styled(StyledTd)`
   word-break: break-all;
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
   color: #333;
-`;
-
-export const PlusSign = styled.span`
-  color: #999;
-  margin-right: 8px;
-  display: inline-block;
-  user-select: none;
 `;
 
 export const LoadingIndicator = styled.div`
