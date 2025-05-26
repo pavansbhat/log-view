@@ -15,7 +15,7 @@ A React-based log viewer for filtering, searching, and customizing log data.
 1. **Clone the repository:**
    ```sh
    git clone https://github.com/your-username/log-view.git
-   cd your-repo
+   cd log-view
    
    Install dependencies:
    npm install
